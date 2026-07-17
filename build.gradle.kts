@@ -21,9 +21,9 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            groupId = "frqme.isa"
-            artifactId = "headlib"
-            version = "1.0.0"
+            groupId = "com.github.Frqmelikescheese"
+            artifactId = "InlineHeadsLib"
+            version = "1.2.0"
         }
     }
 }
