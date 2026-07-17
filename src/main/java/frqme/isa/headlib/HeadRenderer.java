@@ -7,6 +7,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.Style;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -21,6 +22,7 @@ import java.util.concurrent.Executors;
  * Renders player heads as inline text components using custom fonts.
  * <p>
  * Requires the Pixelized resource pack to be installed on the client.
+ * All components use shadowColor(0,0,0,0) to remove text shadows on MC 1.21.4+.
  * </p>
  */
 public class HeadRenderer {
@@ -28,6 +30,17 @@ public class HeadRenderer {
     private static final Key FONT_KEY = Key.key("pixelized", "pixelized");
     private static final String MINOTAR_URL = "https://minotar.net/avatar/%s/8.png";
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
+    private static final Style NO_SHADOW;
+    static {
+        Style.Builder builder = Style.style();
+        try {
+            var method = builder.getClass().getMethod("shadowColor", TextColor.class);
+            TextColor transparent = TextColor.color(0x00000000);
+            method.invoke(builder, transparent);
+        } catch (Exception ignored) {
+        }
+        NO_SHADOW = builder.build();
+    }
 
     private final LoadingCache<String, Component> cache;
 
@@ -112,7 +125,7 @@ public class HeadRenderer {
             throw new IllegalStateException("Failed to fetch head image for " + playerName);
         }
 
-        TextComponent.Builder component = Component.text("").toBuilder();
+        TextComponent.Builder component = Component.text("").style(NO_SHADOW).toBuilder();
 
         for (int i = 1; i <= 64; i++) {
             int row = i == 64 ? 0 : 7 - (i / 8);
@@ -126,14 +139,52 @@ public class HeadRenderer {
                     Component.translatable("pixel.eighth-" + i)
                             .font(FONT_KEY)
                             .color(TextColor.color(rgb))
+                            .style(NO_SHADOW)
             );
-            component.append(Component.translatable("space.-" + ((i % 8) + 1)));
+            component.append(
+                    Component.translatable("space.-" + ((i % 8) + 1))
+                            .style(NO_SHADOW)
+            );
 
             if (i >= 8 && i % 8 == 0 && i != 64) {
-                component.append(Component.translatable("space.-8"));
+                component.append(
+                        Component.translatable("space.-8")
+                                .style(NO_SHADOW)
+                );
             }
         }
 
         return component.build();
+    }
+
+    /**
+     * Wraps any component with no-shadow style.
+     *
+     * @param component The component to wrap
+     * @return The component with shadow removed
+     */
+    public static Component noShadow(Component component) {
+        return component.style(NO_SHADOW);
+    }
+
+    /**
+     * Creates a text component with no shadow.
+     *
+     * @param text The text content
+     * @return A shadow-free text component
+     */
+    public static Component text(String text) {
+        return Component.text(text).style(NO_SHADOW);
+    }
+
+    /**
+     * Creates a text component with no shadow and color.
+     *
+     * @param text  The text content
+     * @param color The text color
+     * @return A shadow-free colored text component
+     */
+    public static Component text(String text, TextColor color) {
+        return Component.text(text, color).style(NO_SHADOW);
     }
 }
